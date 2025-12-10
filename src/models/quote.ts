@@ -1,5 +1,4 @@
 import {
-	Model,
 	InferAttributes,
 	InferCreationAttributes,
 	CreationOptional,
@@ -22,8 +21,8 @@ import QuotePartItem from './quotePartItem';
 import Currency from './currency';
 import Exchange, { updateRates } from '@/lib/exchange';
 import Task from './task';
+import { BaseModel } from './_baseModel';
 
-// ------------------ Enums ------------------
 export enum Messages {
 	code400 = 'Quote was already deleted',
 	code400_1 = 'Duplicated Quote',
@@ -52,10 +51,8 @@ export enum DiscountType {
 	Amount = 2
 }
 
-// ------------------ Quote Model ------------------
-class Quote extends Model<InferAttributes<Quote>, InferCreationAttributes<Quote>> {
+class Quote extends BaseModel<InferAttributes<Quote>, InferCreationAttributes<Quote>> {
 	declare id: CreationOptional<string>;
-	declare active: CreationOptional<boolean>;
 
 	declare status: CreationOptional<Status>;
 	declare name: CreationOptional<string>;
@@ -83,30 +80,24 @@ class Quote extends Model<InferAttributes<Quote>, InferCreationAttributes<Quote>
 	declare profitPerc: CreationOptional<number>;
 
 	// Associations
-	declare currencyCode: ForeignKey<string>;
-	declare currency: NonAttribute<Currency>;
-	declare parts: NonAttribute<Partial<QuotePart>[]>;
-	declare tasks: NonAttribute<Partial<Task>[]>;
-	declare contacts: NonAttribute<CreationAttributes<QuoteContact>[]>;
-	declare opportunity: NonAttribute<Opportunity>;
 	declare opportunityId: ForeignKey<string>;
-	declare revisedQuoteId: CreationOptional<ForeignKey<string>>;
-	declare salesUserId: CreationOptional<ForeignKey<string>>;
-	declare salesUser: NonAttribute<User>;
-	declare addUser: NonAttribute<User>;
-	declare delUser: NonAttribute<User>;
+	declare salesUserId: ForeignKey<string>;
+	declare revisedQuoteId: CreationOptional<ForeignKey<string | null>>;
+	declare currencyCode: ForeignKey<string>;
 
-	declare addUserId: CreationOptional<ForeignKey<string>>;
-	declare delUserId: CreationOptional<ForeignKey<string>>;
-	declare addDate: CreationOptional<Date>;
-	declare delDate: CreationOptional<Date>;
+	declare opportunity?: NonAttribute<Opportunity>;
+	declare salesUser?: NonAttribute<User>;
+	declare revisedQuote?: NonAttribute<Quote>;
+	declare currency: NonAttribute<Currency>;
+
+	declare parts: NonAttribute<QuotePart[]>;
+	declare tasks: NonAttribute<Task[]>;
+	declare contacts: NonAttribute<CreationAttributes<QuoteContact>[]>;
 
 	// Virtual fields
-	declare strStatus: CreationOptional<string>;
-	declare date: CreationOptional<Date>;
-	declare amount: CreationOptional<number>;
-
-	// ------------------ Methods ------------------
+	declare strStatus: string;
+	declare date: Date;
+	declare amount: number;
 
 	/** Calculates costs, subtotals, discounts, taxes, and profit */
 	async calculation(): Promise<boolean> {
@@ -116,13 +107,6 @@ class Quote extends Model<InferAttributes<Quote>, InferCreationAttributes<Quote>
 			if (!me) return false;
 
 			await updateRates();
-
-			const init = {
-				subTotal: Number(me.subTotal),
-				discount: Number(me.discount),
-				currencyCode: me.currencyCode,
-				taxPerc: Number(me.taxPerc)
-			};
 
 			me.subTotal = 0;
 			me.optional = 0;
@@ -232,11 +216,9 @@ class Quote extends Model<InferAttributes<Quote>, InferCreationAttributes<Quote>
 	}
 }
 
-// ------------------ Init ------------------
 Quote.init(
 	{
 		id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
-		active: { type: DataTypes.BOOLEAN, defaultValue: true },
 
 		status: { type: DataTypes.TINYINT, defaultValue: Status.InProgress },
 		name: { type: DataTypes.STRING(250) },
@@ -294,8 +276,17 @@ Quote.init(
 			}
 		},
 
+		// Audit fields
+		active: { type: DataTypes.BOOLEAN, defaultValue: true },
 		addDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, allowNull: false },
-		delDate: { type: DataTypes.DATE, allowNull: true },
+		addUserId: { type: DataTypes.UUID, allowNull: false },
+		delUserId: DataTypes.UUID,
+		delDate: DataTypes.DATE,
+
+		opportunityId: { type: DataTypes.UUID, allowNull: false },
+		salesUserId: { type: DataTypes.UUID, allowNull: false },
+		revisedQuoteId: { type: DataTypes.UUID },
+		currencyCode: { type: DataTypes.STRING(5), allowNull: false },
 
 		strStatus: {
 			type: VIRTUAL,

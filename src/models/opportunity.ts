@@ -1,7 +1,6 @@
 import _ from 'lodash';
 import {
 	Op,
-	Model,
 	InferAttributes,
 	InferCreationAttributes,
 	CreationOptional,
@@ -22,6 +21,7 @@ import OpportunityProposal from './_opportunitiesProposals';
 import Currency from './currency';
 import Quote from './quote';
 import { DateTime } from 'luxon';
+import { BaseModel } from './_baseModel';
 
 export enum Messages {
 	code400 = 'Opportunity was already deleted',
@@ -43,51 +43,10 @@ export enum Status {
 	Cancelled = 210
 }
 
-// ---------------------------
-// Attributes Interface
-// ---------------------------
-export interface OpportunityAttributes {
-	id?: string;
-	active?: boolean;
-	status?: Status;
-	name: string;
-	note?: string;
-	amountEstimated?: number;
-	amountQuoted?: number;
-	amountWon?: number;
-
-	currencyCode?: string;
-	companyId: string;
-	salesUserId?: string;
-
-	addDate?: Date;
-	delDate?: Date;
-	addUserId?: string;
-	delUserId?: string;
-
-	// Virtuals
-	date?: Date;
-	amount?: number;
-	strStatus?: string;
-
-	// Associations
-	currency?: NonAttribute<Currency>;
-	company?: NonAttribute<Company>;
-	salesUser?: NonAttribute<User>;
-	addUser?: NonAttribute<User>;
-
-	parts?: NonAttribute<OpportunityPart[]>;
-	contacts?: NonAttribute<OpportunityContact[]>;
-	proposals?: NonAttribute<OpportunityProposal[]>;
-	quotes?: NonAttribute<Quote[]>;
-}
-
-// ---------------------------
 // Model
-// ---------------------------
-class Opportunity extends Model<InferAttributes<Opportunity>, InferCreationAttributes<Opportunity>> {
+class Opportunity extends BaseModel<InferAttributes<Opportunity>, InferCreationAttributes<Opportunity>> {
 	declare id: CreationOptional<string>;
-	declare active: CreationOptional<boolean>;
+
 	declare status: CreationOptional<Status>;
 	declare name: string;
 	declare note: CreationOptional<string>;
@@ -95,14 +54,8 @@ class Opportunity extends Model<InferAttributes<Opportunity>, InferCreationAttri
 	declare amountQuoted: CreationOptional<number>;
 	declare amountWon: CreationOptional<number>;
 
-	declare currencyCode: ForeignKey<string>;
-	declare companyId: ForeignKey<string>;
-	declare salesUserId: CreationOptional<ForeignKey<string>>;
-
 	declare addDate: CreationOptional<Date>;
 	declare delDate: CreationOptional<Date>;
-	declare addUserId: CreationOptional<ForeignKey<string>>;
-	declare delUserId: CreationOptional<ForeignKey<string>>;
 
 	// Virtuals
 	declare date: CreationOptional<Date>;
@@ -110,19 +63,20 @@ class Opportunity extends Model<InferAttributes<Opportunity>, InferCreationAttri
 	declare strStatus: CreationOptional<string>;
 
 	// Associations
-	declare currency: NonAttribute<Currency>;
-	declare company: NonAttribute<Company>;
-	declare salesUser: NonAttribute<User>;
-	declare addUser: NonAttribute<User>;
+	declare companyId: ForeignKey<string>;
+	declare salesUserId: ForeignKey<string>;
+	declare currencyCode: ForeignKey<string>;
 
-	declare parts: NonAttribute<OpportunityPart[]>;
-	declare contacts: NonAttribute<OpportunityContact[]>;
-	declare proposals: NonAttribute<OpportunityProposal[]>;
-	declare quotes: NonAttribute<Quote[]>;
+	declare currency?: NonAttribute<Currency>;
+	declare company?: NonAttribute<Company>;
+	declare salesUser?: NonAttribute<User>;
 
-	// ---------------------------
+	declare parts?: NonAttribute<OpportunityPart[]>;
+	declare contacts?: NonAttribute<OpportunityContact[]>;
+	declare proposals?: NonAttribute<OpportunityProposal[]>;
+	declare quotes?: NonAttribute<Quote[]>;
+
 	// Data validation
-	// ---------------------------
 	static async dataValidation(args: {
 		req: Request;
 		putModel?: Opportunity;
@@ -237,9 +191,6 @@ class Opportunity extends Model<InferAttributes<Opportunity>, InferCreationAttri
 		return { model };
 	}
 
-	// ---------------------------
-	// Associations update
-	// ---------------------------
 	async associations(args: {
 		user: User;
 		parts?: OpportunityPart[];
@@ -282,13 +233,17 @@ class Opportunity extends Model<InferAttributes<Opportunity>, InferCreationAttri
 		}
 
 		if (proposals) {
-			const ids = proposals.filter((p) => !!p.proposalId).map((p) => p.proposalId!);
+			const ids = proposals.filter((p) => !!p.proposalUserId).map((p) => p.proposalUserId!);
 			const existingProposals = await OpportunityProposal.findAll({ where: { opportunityId: this.id } });
-			const delIds = existingProposals.filter((p) => !ids.includes(p.proposalId)).map((p) => p.proposalId);
-			await OpportunityProposal.destroy({ where: { proposalId: { [Op.in]: delIds }, opportunityId: this.id } });
+			const delIds = existingProposals
+				.filter((p) => !ids.includes(p.proposalUserId))
+				.map((p) => p.proposalUserId);
+			await OpportunityProposal.destroy({
+				where: { proposalUserId: { [Op.in]: delIds }, opportunityId: this.id }
+			});
 
 			proposals.forEach((proposal) => {
-				if (!proposal.proposalId)
+				if (!proposal.proposalUserId)
 					promises.push(OpportunityProposal.create({ ...proposal, opportunityId: this.id }));
 			});
 		}
@@ -298,23 +253,26 @@ class Opportunity extends Model<InferAttributes<Opportunity>, InferCreationAttri
 	}
 }
 
-// ---------------------------
-// Model initialization
-// ---------------------------
 Opportunity.init(
 	{
-		id: {
-			type: DataTypes.UUID,
-			defaultValue: DataTypes.UUIDV4,
-			primaryKey: true
-		},
-		active: { type: DataTypes.BOOLEAN, defaultValue: true },
+		id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
 		status: { type: DataTypes.TINYINT, defaultValue: Status.Lead },
 		name: { type: DataTypes.STRING(250), allowNull: false },
 		note: { type: DataTypes.TEXT },
 		amountEstimated: { type: DataTypes.DECIMAL(18, 4), defaultValue: 0 },
 		amountQuoted: { type: DataTypes.DECIMAL(18, 4), defaultValue: 0 },
 		amountWon: { type: DataTypes.DECIMAL(18, 4), defaultValue: 0 },
+
+		// Audit fields
+		active: { type: DataTypes.BOOLEAN, defaultValue: true },
+		addDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, allowNull: false },
+		addUserId: { type: DataTypes.UUID, allowNull: false },
+		delUserId: DataTypes.UUID,
+		delDate: DataTypes.DATE,
+
+		companyId: { type: DataTypes.UUID, allowNull: false },
+		salesUserId: { type: DataTypes.UUID },
+		currencyCode: { type: DataTypes.STRING(5) },
 
 		// Virtuals
 		date: {
@@ -352,10 +310,7 @@ Opportunity.init(
 
 				return 'Cancelled';
 			}
-		},
-
-		addDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, allowNull: false },
-		delDate: { type: DataTypes.DATE, allowNull: true }
+		}
 	},
 	{
 		sequelize,

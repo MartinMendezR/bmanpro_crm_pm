@@ -1,5 +1,4 @@
 import {
-	Model,
 	InferAttributes,
 	InferCreationAttributes,
 	CreationOptional,
@@ -13,12 +12,11 @@ import sequelize from '@/lib/sequelize';
 import _ from 'lodash';
 import Joi from 'joi';
 
-import User from './user';
 import QuotePartItem, { schema as itemSchema } from './quotePartItem';
 import OpportunityPart from './opportunityPart';
 import Quote from './quote';
+import { BaseModel } from './_baseModel';
 
-// ------------------ Joi schema ------------------
 export const schema = () =>
 	Joi.object({
 		id: Joi.string().allow('', null).max(25),
@@ -28,8 +26,7 @@ export const schema = () =>
 		items: Joi.array().items(itemSchema())
 	});
 
-// ------------------ Model ------------------
-class QuotePart extends Model<InferAttributes<QuotePart>, InferCreationAttributes<QuotePart>> {
+class QuotePart extends BaseModel<InferAttributes<QuotePart>, InferCreationAttributes<QuotePart>> {
 	declare id: CreationOptional<string>;
 	declare order: CreationOptional<number>;
 	declare name: string;
@@ -39,16 +36,11 @@ class QuotePart extends Model<InferAttributes<QuotePart>, InferCreationAttribute
 	declare amount: CreationOptional<NonAttribute<number>>;
 
 	// Associations
+	declare quoteId: ForeignKey<string>;
+	declare opportunityPartId: CreationOptional<ForeignKey<string | null>>;
+
 	declare quote: NonAttribute<Quote>;
-	declare items: NonAttribute<QuotePartItem[]>;
-
-	declare quoteId: CreationOptional<ForeignKey<string>>;
-	declare opportunityPartId: CreationOptional<ForeignKey<string>>;
-	declare addUser: NonAttribute<User>;
-	declare addUserId: CreationOptional<ForeignKey<string>>;
-	declare addDate: CreationOptional<Date>;
-
-	// ------------------ Helpers ------------------
+	declare items?: NonAttribute<QuotePartItem[]>;
 
 	static pick(parts: Partial<QuotePart>[]) {
 		return parts.map((part) => {
@@ -103,7 +95,6 @@ class QuotePart extends Model<InferAttributes<QuotePart>, InferCreationAttribute
 	}
 }
 
-// ------------------ Sequelize Init ------------------
 QuotePart.init(
 	{
 		id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
@@ -112,7 +103,13 @@ QuotePart.init(
 		description: { type: DataTypes.TEXT },
 		quoted: { type: DataTypes.BOOLEAN, defaultValue: false },
 		isOptional: { type: DataTypes.BOOLEAN, defaultValue: false },
-		addDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, allowNull: false }
+
+		// Audit fields
+		active: { type: DataTypes.BOOLEAN, defaultValue: true },
+		addDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, allowNull: false },
+		addUserId: { type: DataTypes.UUID, allowNull: false },
+		delUserId: DataTypes.UUID,
+		delDate: DataTypes.DATE
 	},
 	{
 		sequelize,
@@ -125,7 +122,6 @@ QuotePart.init(
 	}
 );
 
-// ------------------ Helpers ------------------
 async function updatePart(part: Partial<QuotePart>, order: number, addUserId: string) {
 	await QuotePart.update({ ...part, order }, { where: { id: part.id } });
 

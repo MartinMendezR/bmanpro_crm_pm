@@ -1,6 +1,5 @@
 import _ from 'lodash';
 import {
-	Model,
 	InferAttributes,
 	InferCreationAttributes,
 	CreationOptional,
@@ -15,6 +14,7 @@ import User from './user';
 import Opportunity from './opportunity';
 import Quote from './quote';
 import PO from './po';
+import { BaseModel } from './_baseModel';
 
 export enum Messages {
 	code400 = 'Task has already deleted',
@@ -33,34 +33,27 @@ export enum Status {
 	Cancelled = 251
 }
 
-class Task extends Model<InferAttributes<Task>, InferCreationAttributes<Task>> {
+class Task extends BaseModel<InferAttributes<Task>, InferCreationAttributes<Task>> {
 	declare id: CreationOptional<string>;
-	declare active: CreationOptional<boolean>;
 	declare status: CreationOptional<Status>;
 
 	declare name: string;
 	declare description: string;
 	declare progress: number;
 	declare startDate: Date;
-	declare dueDate?: CreationOptional<Date>;
-	declare endDate?: CreationOptional<Date>;
+	declare dueDate: CreationOptional<Date | null>;
+	declare endDate: CreationOptional<Date | null>;
 
 	// Associations
 	declare responsibleId: ForeignKey<string>;
-	declare opportunityId: CreationOptional<ForeignKey<string> | null>;
-	declare quoteId: CreationOptional<ForeignKey<string> | null>;
-	declare poId: CreationOptional<ForeignKey<string> | null>;
+	declare opportunityId: CreationOptional<ForeignKey<string | null>>;
+	declare quoteId: CreationOptional<ForeignKey<string | null>>;
+	declare poId: CreationOptional<ForeignKey<string | null>>;
 
-	declare responsible: NonAttribute<User>;
-	declare opportunity: NonAttribute<Opportunity>;
-	declare quote: NonAttribute<Quote>;
-	declare po: NonAttribute<PO>;
-
-	// Timestamp
-	declare addUserId: CreationOptional<ForeignKey<string>>;
-	declare delUserId: CreationOptional<ForeignKey<string>>;
-	declare addDate: CreationOptional<Date>;
-	declare delDate: CreationOptional<Date>;
+	declare responsible?: NonAttribute<User>;
+	declare opportunity?: NonAttribute<Opportunity>;
+	declare quote?: NonAttribute<Quote>;
+	declare po?: NonAttribute<PO>;
 
 	/** Validate request body for creating/updating a Task */
 	static async dataValidation(args: {
@@ -125,21 +118,11 @@ class Task extends Model<InferAttributes<Task>, InferCreationAttributes<Task>> {
 
 		return { model };
 	}
-
-	/** Define Sequelize associations */
-	static associate() {
-		Task.belongsTo(User, { foreignKey: 'responsibleId', as: 'responsible' });
-		Task.belongsTo(User, { foreignKey: 'addUserId', as: 'addUser' });
-		Task.belongsTo(Opportunity, { foreignKey: 'opportunityId', as: 'opportunity' });
-		Task.belongsTo(Quote, { foreignKey: 'quoteId', as: 'quote' });
-		Task.belongsTo(PO, { foreignKey: 'poId', as: 'po' });
-	}
 }
 
 Task.init(
 	{
 		id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
-		active: { type: DataTypes.BOOLEAN, defaultValue: true },
 		status: { type: DataTypes.TINYINT, defaultValue: Status.Schedulled },
 		progress: { type: DataTypes.TINYINT, defaultValue: 0, comment: '0 - 100 progress percentage' },
 		name: { type: DataTypes.STRING(255), allowNull: false, validate: { min: 1, max: 255 } },
@@ -147,8 +130,18 @@ Task.init(
 		startDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, allowNull: false },
 		endDate: { type: DataTypes.DATE },
 		dueDate: { type: DataTypes.DATE },
+
+		// Audit fields
+		active: { type: DataTypes.BOOLEAN, defaultValue: true },
 		addDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, allowNull: false },
-		delDate: { type: DataTypes.DATE, allowNull: true }
+		addUserId: { type: DataTypes.UUID, allowNull: false },
+		delUserId: DataTypes.UUID,
+		delDate: DataTypes.DATE,
+
+		responsibleId: { type: DataTypes.UUID, allowNull: false },
+		opportunityId: DataTypes.UUID,
+		quoteId: DataTypes.UUID,
+		poId: DataTypes.UUID
 	},
 	{
 		sequelize,

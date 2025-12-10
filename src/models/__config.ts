@@ -8,7 +8,6 @@ import {
 	ForeignKey
 } from 'sequelize';
 import sequelize from '@/lib/sequelize';
-import id from 'uniqid';
 import Joi from 'joi';
 import { trimProperties } from '@/lib/format';
 
@@ -78,7 +77,7 @@ class Config extends Model<InferAttributes<Config>, InferCreationAttributes<Conf
 
 Config.init(
 	{
-		id: { type: DataTypes.STRING(25), defaultValue: () => id(), primaryKey: true },
+		id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
 		businessName: { type: DataTypes.STRING(255), allowNull: false },
 		domain: { type: DataTypes.STRING(255), allowNull: false },
 		street1: { type: DataTypes.STRING(150) },
@@ -94,7 +93,8 @@ Config.init(
 		noReplyAuthPassword: { type: DataTypes.STRING(255) },
 
 		//  Timestamp
-		addDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
+		addDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+		addUserId: { type: DataTypes.UUID, allowNull: false }
 	},
 	{
 		sequelize,

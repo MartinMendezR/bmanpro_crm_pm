@@ -1,7 +1,6 @@
 import _ from 'lodash';
 import {
 	Op,
-	Model,
 	InferAttributes,
 	InferCreationAttributes,
 	CreationOptional,
@@ -16,11 +15,11 @@ import { trimProperties } from '@/lib/format';
 import Joi from 'joi';
 import Company from './company';
 import User from './user';
-import QuoteContact from './_quotesContacts';
 import Contact from './contact';
 import Currency from './currency';
 import { updateRates } from '@/lib/exchange';
 import POItem, { schema as poItemSchema } from './poItem';
+import { BaseModel } from './_baseModel';
 
 export enum Messages {
 	code400 = 'PO was already deleted',
@@ -50,14 +49,8 @@ export enum DiscountType {
 	Amount = 2
 }
 
-class PO extends Model<InferAttributes<PO>, InferCreationAttributes<PO>> {
+class PO extends BaseModel<InferAttributes<PO>, InferCreationAttributes<PO>> {
 	declare id: CreationOptional<string>;
-	declare active: CreationOptional<boolean>;
-
-	declare companyId: ForeignKey<string>;
-	declare company: NonAttribute<Company>;
-	declare buyerId: ForeignKey<string>;
-	declare buyer: NonAttribute<QuoteContact>;
 
 	declare status: CreationOptional<Status>;
 	declare poNumber: string;
@@ -79,26 +72,21 @@ class PO extends Model<InferAttributes<PO>, InferCreationAttributes<PO>> {
 	declare profitPerc: CreationOptional<number>;
 
 	// Associations
+	declare companyId: ForeignKey<string>;
+	declare buyerId: CreationOptional<ForeignKey<string | null>>;
+	declare salesUserId: CreationOptional<ForeignKey<string | null>>;
 	declare currencyCode: ForeignKey<string>;
-	declare currency: NonAttribute<Currency>;
-	declare items: NonAttribute<POItem[]>;
 
-	declare salesUserId: ForeignKey<string>;
+	declare company?: NonAttribute<Company>;
+	declare buyer?: NonAttribute<Contact>;
 	declare salesUser: NonAttribute<User>;
-	declare addUser: NonAttribute<User>;
-	declare delUser: NonAttribute<User>;
+	declare currency: NonAttribute<Currency>;
+
+	declare items: NonAttribute<POItem[]>;
 
 	declare strStatus: CreationOptional<string>;
 	declare amount: CreationOptional<number>;
 
-	// Timestamp
-	declare addUserId: CreationOptional<ForeignKey<string>>;
-	declare delUserId: CreationOptional<ForeignKey<string>>;
-	declare addDate: CreationOptional<Date>;
-	declare delDate: CreationOptional<Date>;
-
-	// ----------------- Methods -----------------
-	// ----------------- Refactored calculation() -----------------
 	async calculation(): Promise<boolean> {
 		const me = await PO.scope('me').findByPk(this.id, {
 			include: [{ model: POItem, as: 'items' }]
@@ -236,12 +224,7 @@ class PO extends Model<InferAttributes<PO>, InferCreationAttributes<PO>> {
 
 PO.init(
 	{
-		id: {
-			type: DataTypes.STRING(25),
-			defaultValue: () => Math.random().toString(36).slice(2, 27),
-			primaryKey: true
-		},
-		active: { type: DataTypes.BOOLEAN, defaultValue: true },
+		id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
 
 		status: { type: DataTypes.TINYINT, defaultValue: Status.Received },
 		poNumber: { type: DataTypes.STRING(100), allowNull: false },
@@ -334,8 +317,18 @@ PO.init(
 		discountType: { type: DataTypes.TINYINT, defaultValue: 0 },
 		discountPerc: { type: DataTypes.DECIMAL(18, 4), defaultValue: 0 },
 
-		addDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
-		delDate: { type: DataTypes.DATE, allowNull: true }
+		// Audit fields
+		active: { type: DataTypes.BOOLEAN, defaultValue: true },
+		addDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, allowNull: false },
+		addUserId: { type: DataTypes.UUID, allowNull: false },
+		delUserId: DataTypes.UUID,
+		delDate: DataTypes.DATE,
+
+		// Associations
+		companyId: { type: DataTypes.UUID, allowNull: false },
+		buyerId: DataTypes.UUID,
+		salesUserId: DataTypes.UUID,
+		currencyCode: { type: DataTypes.STRING(5), allowNull: true }
 	},
 	{
 		sequelize,

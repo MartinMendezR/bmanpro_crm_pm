@@ -1,5 +1,4 @@
 import {
-	Model,
 	InferAttributes,
 	InferCreationAttributes,
 	CreationOptional,
@@ -8,25 +7,36 @@ import {
 	DataTypes
 } from 'sequelize';
 import sequelize from '@/lib/sequelize';
-import id from 'uniqid';
 import User from './user';
-import Quote from './quote';
+import Opportunity from './opportunity';
+import { BaseModel } from './_baseModel';
 
-class OpportunityProposal extends Model<
+class OpportunityProposal extends BaseModel<
 	InferAttributes<OpportunityProposal>,
 	InferCreationAttributes<OpportunityProposal>
 > {
 	declare id: CreationOptional<string>;
 	//  Associations
-	declare opportunityId: CreationOptional<ForeignKey<string>>;
-	declare proposalId: ForeignKey<string>;
-	declare Proposal: NonAttribute<User>;
-	declare Quote: NonAttribute<Quote>;
+	declare opportunityId: ForeignKey<string>;
+	declare proposalUserId: ForeignKey<string>;
+
+	declare opportunity: NonAttribute<Opportunity>;
+	declare proposalUser: NonAttribute<User>;
 }
 
 OpportunityProposal.init(
 	{
-		id: { type: DataTypes.STRING(25), defaultValue: () => id(), primaryKey: true }
+		id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+
+		// Audit fields
+		active: { type: DataTypes.BOOLEAN, defaultValue: true },
+		addDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, allowNull: false },
+		addUserId: { type: DataTypes.UUID, allowNull: false },
+		delUserId: DataTypes.UUID,
+		delDate: DataTypes.DATE,
+
+		opportunityId: { type: DataTypes.UUID, allowNull: false },
+		proposalUserId: { type: DataTypes.UUID, allowNull: false }
 	},
 	{
 		sequelize,

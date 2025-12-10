@@ -1,5 +1,4 @@
 import {
-	Model,
 	InferAttributes,
 	InferCreationAttributes,
 	CreationOptional,
@@ -15,8 +14,8 @@ import Joi from 'joi';
 import User from './user';
 import QuotePartItemCost, { schema as costSchema } from './quotePartItemCost';
 import QuotePart from './quotePart';
+import { BaseModel } from './_baseModel';
 
-// ------------------ Joi schema ------------------
 export const schema = () =>
 	Joi.object({
 		id: Joi.string().allow('', null).max(25),
@@ -29,8 +28,7 @@ export const schema = () =>
 		costs: Joi.array().items(costSchema())
 	});
 
-// ------------------ Model ------------------
-class QuotePartItem extends Model<InferAttributes<QuotePartItem>, InferCreationAttributes<QuotePartItem>> {
+class QuotePartItem extends BaseModel<InferAttributes<QuotePartItem>, InferCreationAttributes<QuotePartItem>> {
 	declare id: CreationOptional<string>;
 	declare order: CreationOptional<number>;
 
@@ -50,15 +48,14 @@ class QuotePartItem extends Model<InferAttributes<QuotePartItem>, InferCreationA
 	declare subTotal: CreationOptional<number>;
 
 	// Associations
+	declare quotePartId: CreationOptional<ForeignKey<string>>;
+
 	declare part: NonAttribute<QuotePart>;
+	declare addUser: NonAttribute<User>;
+	declare delUser: NonAttribute<User>;
+
 	declare costs: NonAttribute<QuotePartItemCost[]>;
 
-	declare quotePartId: CreationOptional<ForeignKey<string>>;
-	declare addUser: NonAttribute<User>;
-	declare addUserId: CreationOptional<ForeignKey<string>>;
-	declare addDate: CreationOptional<Date>;
-
-	// ------------------ Helpers ------------------
 	static pick(items: Partial<QuotePartItem>[]) {
 		return items.map((item) => {
 			const pick = _.pick(item, ['id', 'item', 'quantity', 'unit', 'description', 'fixed', 'fixedPrice']);
@@ -106,7 +103,6 @@ class QuotePartItem extends Model<InferAttributes<QuotePartItem>, InferCreationA
 	}
 }
 
-// ------------------ Sequelize Init ------------------
 QuotePartItem.init(
 	{
 		id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
@@ -121,6 +117,15 @@ QuotePartItem.init(
 		fixedPrice: { type: DataTypes.DECIMAL(18, 4), defaultValue: 0 },
 		calUnitPrice: { type: DataTypes.DECIMAL(18, 4), defaultValue: 0 },
 		unitCost: { type: DataTypes.DECIMAL(18, 4), defaultValue: 0 },
+
+		// Audit fields
+		active: { type: DataTypes.BOOLEAN, defaultValue: true },
+		addDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, allowNull: false },
+		addUserId: { type: DataTypes.UUID, allowNull: false },
+		delUserId: DataTypes.UUID,
+		delDate: DataTypes.DATE,
+
+		quotePartId: { type: DataTypes.UUID, allowNull: false },
 
 		// Virtual
 		unitPrice: {
@@ -139,7 +144,6 @@ QuotePartItem.init(
 			}
 		},
 
-		addDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, allowNull: false }
 	},
 	{
 		sequelize,
@@ -152,7 +156,6 @@ QuotePartItem.init(
 	}
 );
 
-// ------------------ Helpers ------------------
 async function updateItem(item: Partial<QuotePartItem>, id: string, addUserId: string) {
 	const { costs, ...itemWithoutCosts } = item;
 	await QuotePartItem.update(itemWithoutCosts, { where: { id } });

@@ -1,5 +1,4 @@
 import {
-	Model,
 	InferAttributes,
 	InferCreationAttributes,
 	CreationOptional,
@@ -13,10 +12,10 @@ import sequelize from '@/lib/sequelize';
 import _ from 'lodash';
 import Joi from 'joi';
 
-import User from './user';
 import Currency from './currency';
+import QuotePartItem from './quotePartItem';
+import { BaseModel } from './_baseModel';
 
-// ------------------ Joi schema ------------------
 export const schema = () =>
 	Joi.object({
 		quantity: Joi.number().min(0),
@@ -32,8 +31,7 @@ export const schema = () =>
 		pendingFollowUpDate: Joi.date().allow(null)
 	});
 
-// ------------------ Model ------------------
-class QuotePartItemCost extends Model<InferAttributes<QuotePartItemCost>, InferCreationAttributes<QuotePartItemCost>> {
+class QuotePartItemCost extends BaseModel<InferAttributes<QuotePartItemCost>, InferCreationAttributes<QuotePartItemCost>> {
 	declare id: CreationOptional<string>;
 	declare order: CreationOptional<number>;
 
@@ -50,17 +48,12 @@ class QuotePartItemCost extends Model<InferAttributes<QuotePartItemCost>, InferC
 	declare pendingFollowUpDate: CreationOptional<boolean>;
 
 	// Associations
-	declare quotePartItemId: CreationOptional<ForeignKey<string>>;
-	declare productId: CreationOptional<ForeignKey<string>>;
-	declare currency: NonAttribute<Currency>;
+	declare quotePartItemId: ForeignKey<string>;
 	declare currencyCode: ForeignKey<string>;
-	declare addUser: NonAttribute<User>;
 
-	// Time Stamp
-	declare addUserId: CreationOptional<ForeignKey<string>>;
-	declare addDate: CreationOptional<Date>;
+	declare quotePartItem: NonAttribute<QuotePartItem>;
+	declare currency: NonAttribute<Currency>;
 
-	// ------------------ Helpers ------------------
 	static pick(costs: Partial<QuotePartItemCost>[]) {
 		return costs.map((cost) =>
 			_.pick(cost, [
@@ -111,7 +104,6 @@ class QuotePartItemCost extends Model<InferAttributes<QuotePartItemCost>, InferC
 	}
 }
 
-// ------------------ Sequelize Init ------------------
 QuotePartItemCost.init(
 	{
 		id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
@@ -127,7 +119,16 @@ QuotePartItemCost.init(
 		profit: { type: DataTypes.DECIMAL(18, 4), defaultValue: 0 },
 		pending: { type: DataTypes.BOOLEAN, defaultValue: false },
 		pendingFollowUpDate: { type: DataTypes.DATE },
-		addDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, allowNull: false }
+
+		// Audit fields
+		active: { type: DataTypes.BOOLEAN, defaultValue: true },
+		addDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, allowNull: false },
+		addUserId: { type: DataTypes.UUID, allowNull: false },
+		delUserId: DataTypes.UUID,
+		delDate: DataTypes.DATE,
+
+		quotePartItemId: { type: DataTypes.UUID, allowNull: false },
+		currencyCode: { type: DataTypes.STRING(5), allowNull: false }
 	},
 	{
 		sequelize,
@@ -137,7 +138,6 @@ QuotePartItemCost.init(
 	}
 );
 
-// ------------------ Helpers ------------------
 async function updateCost(cost: Partial<QuotePartItemCost>, id: string, addUserId: string) {
 	await QuotePartItemCost.update(cost, { where: { id } });
 }

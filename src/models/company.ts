@@ -1,7 +1,6 @@
 import _ from 'lodash';
 import {
 	Op,
-	Model,
 	InferAttributes,
 	InferCreationAttributes,
 	CreationOptional,
@@ -12,11 +11,11 @@ import {
 import sequelize from '@/lib/sequelize';
 import { trimProperties } from '@/lib/format';
 import Joi from 'joi';
-import id from 'uniqid';
 import User from './user';
 import Contact from './contact';
 import Opportunity from './opportunity';
 import Quote from './quote';
+import { BaseModel } from './_baseModel';
 
 export enum messages {
 	code400 = 'Company has already deleted',
@@ -25,9 +24,8 @@ export enum messages {
 	code404 = 'Company was not found'
 }
 
-class Company extends Model<InferAttributes<Company>, InferCreationAttributes<Company>> {
+class Company extends BaseModel<InferAttributes<Company>, InferCreationAttributes<Company>> {
 	declare id: CreationOptional<string>;
-	declare active: CreationOptional<boolean>;
 
 	declare name: string;
 	declare city: string;
@@ -48,15 +46,9 @@ class Company extends Model<InferAttributes<Company>, InferCreationAttributes<Co
 	declare isCompetitor: CreationOptional<boolean>;
 
 	//  Associations
-	declare salesUserId: CreationOptional<ForeignKey<string> | null>;
-	declare salesUser: NonAttribute<User>;
-	declare contacts: NonAttribute<Contact[]>;
-
-	//  Time Stamp
-	declare addUserId: CreationOptional<ForeignKey<string>>;
-	declare delUserId: CreationOptional<ForeignKey<string>>;
-	declare addDate: CreationOptional<Date>;
-	declare delDate: CreationOptional<Date>;
+	declare salesUserId: CreationOptional<ForeignKey<string | null>>;
+	declare salesUser?: NonAttribute<User>;
+	declare contacts?: NonAttribute<Contact[]>;
 
 	static async dataValidation(args: {
 		user: User;
@@ -160,8 +152,7 @@ class Company extends Model<InferAttributes<Company>, InferCreationAttributes<Co
 
 Company.init(
 	{
-		id: { type: DataTypes.STRING(25), defaultValue: () => id(), primaryKey: true },
-		active: { type: DataTypes.BOOLEAN, defaultValue: true },
+		id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
 
 		name: { type: DataTypes.STRING(255), allowNull: false, validate: { min: 1, max: 255 } },
 		city: { type: DataTypes.STRING(75), allowNull: false, validate: { min: 1, max: 75 } },
@@ -181,9 +172,13 @@ Company.init(
 		isSupplier: { type: DataTypes.BOOLEAN, defaultValue: false, comment: '' },
 		isCompetitor: { type: DataTypes.BOOLEAN, defaultValue: false, comment: '' },
 
-		//  Timestamp
+		active: { type: DataTypes.BOOLEAN, defaultValue: true },
 		addDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, allowNull: false },
-		delDate: { type: DataTypes.DATE, allowNull: true }
+		addUserId: { type: DataTypes.UUID, allowNull: false },
+		delUserId: DataTypes.UUID,
+		delDate: DataTypes.DATE,
+
+		salesUserId: { type: DataTypes.UUID, allowNull: false }
 	},
 	{
 		sequelize,

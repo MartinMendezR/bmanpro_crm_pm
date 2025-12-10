@@ -1,5 +1,4 @@
 import {
-	Model,
 	InferAttributes,
 	InferCreationAttributes,
 	CreationOptional,
@@ -10,8 +9,9 @@ import {
 import sequelize from '@/lib/sequelize';
 import User from './user';
 import Opportunity from './opportunity';
+import { BaseModel } from './_baseModel';
 
-class OpportunityPart extends Model<InferAttributes<OpportunityPart>, InferCreationAttributes<OpportunityPart>> {
+class OpportunityPart extends BaseModel<InferAttributes<OpportunityPart>, InferCreationAttributes<OpportunityPart>> {
 	declare id: CreationOptional<string>;
 	declare order: CreationOptional<number>;
 
@@ -21,39 +21,30 @@ class OpportunityPart extends Model<InferAttributes<OpportunityPart>, InferCreat
 
 	// Associations
 	declare opportunityId: ForeignKey<string>;
-	declare opportunity: NonAttribute<Opportunity>;
-	declare addUserId: CreationOptional<ForeignKey<string>>;
-	declare addUser: NonAttribute<User>;
-	declare delUserId: CreationOptional<ForeignKey<string>>;
-	declare delUser: NonAttribute<User>;
+	declare opportunity?: NonAttribute<Opportunity>;
 
 	// Timestamps
-	declare addDate: CreationOptional<Date>;
-	declare delDate: CreationOptional<Date>;
 	declare fullName: CreationOptional<string>;
 }
 
 OpportunityPart.init(
 	{
-		id: {
-			type: DataTypes.UUID,
-			defaultValue: DataTypes.UUIDV4,
-			primaryKey: true
-		},
+		id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
 		order: { type: DataTypes.SMALLINT },
 
 		name: { type: DataTypes.STRING(250), allowNull: false },
 		description: { type: DataTypes.TEXT },
 		quoted: { type: DataTypes.BOOLEAN, defaultValue: false },
 
-		// Associations
-		opportunityId: { type: DataTypes.STRING(25), allowNull: false },
-		addUserId: { type: DataTypes.STRING(25), allowNull: true },
-		delUserId: { type: DataTypes.STRING(25), allowNull: true },
-
-		// Timestamps
+		// Audit fields
+		active: { type: DataTypes.BOOLEAN, defaultValue: true },
 		addDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, allowNull: false },
-		delDate: { type: DataTypes.DATE, allowNull: true },
+		addUserId: { type: DataTypes.UUID, allowNull: false },
+		delUserId: DataTypes.UUID,
+		delDate: DataTypes.DATE,
+
+		opportunityId: { type: DataTypes.UUID, allowNull: false },
+
 		fullName: {
 			type: DataTypes.VIRTUAL,
 			get() {

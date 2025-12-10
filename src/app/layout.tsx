@@ -1,5 +1,4 @@
-console.log('LAYOUT RUNTIME:', typeof window === 'undefined' ? 'SERVER' : 'CLIENT');
-export const runtime = 'nodejs';
+import '@/server/db-init';
 import clsx from 'clsx';
 import 'src/styles/splash-screen.css';
 import 'src/styles/index.css';

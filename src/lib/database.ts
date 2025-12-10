@@ -8,9 +8,9 @@ import { updateRates } from './exchange';
 
 //  Database Connection
 const connectionOptions: ConnectionOptions = {
-	host: process.env.DB_HOST,
-	user: process.env.DB_USER,
-	password: process.env.DB_PASSWORD
+	host: process.env.MYSQL_HOST,
+	user: process.env.MYSQL_USER,
+	password: process.env.MYSQL_PASSWORD
 };
 const mySQLConn = mysql.createConnection(connectionOptions);
 

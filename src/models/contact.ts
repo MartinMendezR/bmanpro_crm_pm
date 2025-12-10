@@ -1,7 +1,6 @@
 import _ from 'lodash';
 import {
 	Op,
-	Model,
 	InferAttributes,
 	InferCreationAttributes,
 	CreationOptional,
@@ -15,6 +14,7 @@ import Joi from 'joi';
 import Company from './company';
 import User from './user';
 import Opportunity from './opportunity';
+import { BaseModel } from './_baseModel';
 
 export enum messages {
 	code400 = 'Contact was already deleted',
@@ -23,23 +23,14 @@ export enum messages {
 	code404 = 'Contact was not found'
 }
 
-// ---------------------------
-//  Contact Model
-// ---------------------------
-class Contact extends Model<InferAttributes<Contact>, InferCreationAttributes<Contact>> {
+class Contact extends BaseModel<InferAttributes<Contact>, InferCreationAttributes<Contact>> {
 	// Auto-generated / optional
 	declare id: CreationOptional<string>;
 	declare avatar: CreationOptional<string>;
-	declare active: CreationOptional<boolean>;
-	declare addDate: CreationOptional<Date>;
-	declare delDate: CreationOptional<Date>;
-	declare addUserId: CreationOptional<ForeignKey<string>>;
-	declare delUserId: CreationOptional<ForeignKey<string>>;
 
 	// Required fields
 	declare fName: string;
 	declare lName: string;
-	declare companyId: ForeignKey<string>;
 
 	// Optional fields
 	declare prefix?: string;
@@ -52,16 +43,16 @@ class Contact extends Model<InferAttributes<Contact>, InferCreationAttributes<Co
 	declare emailPersonal?: string;
 
 	// Associations (NonAttribute)
-	declare company: NonAttribute<Company>;
-	declare addUser: NonAttribute<User>;
+	declare companyId: ForeignKey<string>;
+	declare addUserId: ForeignKey<string>;
+	declare delUserId: ForeignKey<string>;
+	declare company?: NonAttribute<Company>;
 
 	// Virtual fields
 	declare fullName: CreationOptional<string>;
 	declare name: CreationOptional<string>;
 
-	// ---------------------------
 	//  Data Validation Method
-	// ---------------------------
 	static async dataValidation(args: {
 		method: 'POST' | 'PUT';
 		user: User;
@@ -110,9 +101,7 @@ class Contact extends Model<InferAttributes<Contact>, InferCreationAttributes<Co
 
 		if (error) return { message: error.message };
 
-		// ---------------------------
 		//  Business Logic
-		// ---------------------------
 		const model = putModel ?? Contact.build(body);
 
 		if (putModel) model.set(body);
@@ -150,18 +139,10 @@ class Contact extends Model<InferAttributes<Contact>, InferCreationAttributes<Co
 	}
 }
 
-// ---------------------------
-//  Sequelize Init
-// ---------------------------
 Contact.init(
 	{
-		id: {
-			type: DataTypes.UUID,
-			defaultValue: DataTypes.UUIDV4,
-			primaryKey: true
-		},
+		id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
 		avatar: { type: DataTypes.TEXT },
-		active: { type: DataTypes.BOOLEAN, defaultValue: true },
 
 		prefix: { type: DataTypes.STRING(25) },
 		fName: { type: DataTypes.STRING(100), allowNull: false, validate: { min: 1, max: 100 } },
@@ -175,9 +156,15 @@ Contact.init(
 		email: { type: DataTypes.STRING(150) },
 		emailPersonal: { type: DataTypes.STRING(150) },
 
-		// Timestamps
+		// Audit fields
+		active: { type: DataTypes.BOOLEAN, defaultValue: true },
 		addDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, allowNull: false },
-		delDate: { type: DataTypes.DATE, allowNull: true },
+		addUserId: { type: DataTypes.UUID, allowNull: false },
+		delUserId: DataTypes.UUID,
+		delDate: DataTypes.DATE,		
+
+		//	Associations
+		companyId: { type: DataTypes.UUID, allowNull: false },
 
 		// Virtuals
 		fullName: {

@@ -1,5 +1,4 @@
 import {
-	Model,
 	InferAttributes,
 	InferCreationAttributes,
 	CreationOptional,
@@ -10,12 +9,13 @@ import {
 	Op
 } from 'sequelize';
 import sequelize from '@/lib/sequelize';
-import User from './user';
 import Joi from 'joi';
 import _ from 'lodash';
 import QuotePartItem from './quotePartItem';
+import PO from './po';
+import { BaseModel } from './_baseModel';
 
-// ---------------- Schema ----------------
+// Schema
 export const schema = () =>
 	Joi.object({
 		id: Joi.string().allow('', null).max(25),
@@ -28,7 +28,7 @@ export const schema = () =>
 		quotePartItemId: Joi.string().allow('', null).max(25)
 	});
 
-class POItem extends Model<InferAttributes<POItem>, InferCreationAttributes<POItem>> {
+class POItem extends BaseModel<InferAttributes<POItem>, InferCreationAttributes<POItem>> {
 	declare id: CreationOptional<string>;
 	declare order: CreationOptional<number>;
 
@@ -45,15 +45,12 @@ class POItem extends Model<InferAttributes<POItem>, InferCreationAttributes<POIt
 
 	// Associations
 	declare poId: ForeignKey<string>;
-	declare addUser: NonAttribute<User>;
-	declare quotePartItemId?: CreationOptional<ForeignKey<string>>;
-	declare quotePartItem: NonAttribute<QuotePartItem | null>;
+	declare quotePartItemId: CreationOptional<ForeignKey<string | null>>;
 
-	// Timestamp
-	declare addUserId: CreationOptional<ForeignKey<string>>;
-	declare addDate: CreationOptional<Date>;
+	declare po?: NonAttribute<PO>;
+	declare quotePartItem?: NonAttribute<QuotePartItem>;
 
-	// ---------------- Pick fields ----------------
+	// Pick fields
 	static pick(items: Partial<POItem>[]) {
 		return items.map((item) => {
 			const picked = _.pick(item, [
@@ -74,7 +71,7 @@ class POItem extends Model<InferAttributes<POItem>, InferCreationAttributes<POIt
 		});
 	}
 
-	// ---------------- Updating ----------------
+	// Updating
 	static async updating(args: {
 		items: CreationAttributes<POItem>[];
 		poId: string;
@@ -118,14 +115,9 @@ class POItem extends Model<InferAttributes<POItem>, InferCreationAttributes<POIt
 	}
 }
 
-// ---------------- Init Model ----------------
 POItem.init(
 	{
-		id: {
-			type: DataTypes.UUID,
-			defaultValue: DataTypes.UUIDV4,
-			primaryKey: true
-		},
+		id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
 		order: { type: DataTypes.SMALLINT },
 
 		item: { type: DataTypes.STRING(10) },
@@ -144,8 +136,15 @@ POItem.init(
 			}
 		},
 
-		// Timestamp
-		addDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, allowNull: false }
+		// Audit fields
+		active: { type: DataTypes.BOOLEAN, defaultValue: true },
+		addDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, allowNull: false },
+		addUserId: { type: DataTypes.UUID, allowNull: false },
+		delUserId: DataTypes.UUID,
+		delDate: DataTypes.DATE,
+
+		poId: { type: DataTypes.UUID, allowNull: false },
+		quotePartItemId: DataTypes.UUID
 	},
 	{
 		sequelize,
@@ -155,7 +154,7 @@ POItem.init(
 	}
 );
 
-// ---------------- Create helper ----------------
+// Create helper
 const create = async (item: Partial<POItem>) => {
 	let quantity = item.quantity ?? 0;
 	let description = item.description ?? '';

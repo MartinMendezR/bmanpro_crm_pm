@@ -1,5 +1,4 @@
 import {
-	Model,
 	InferAttributes,
 	InferCreationAttributes,
 	CreationOptional,
@@ -8,10 +7,11 @@ import {
 	NonAttribute
 } from 'sequelize';
 import sequelize from '@/lib/sequelize';
-import id from 'uniqid';
-import User from './user';
+import Opportunity from './opportunity';
+import Contact from './contact';
+import { BaseModel } from './_baseModel';
 
-class OpportunityContact extends Model<
+class OpportunityContact extends BaseModel<
 	InferAttributes<OpportunityContact>,
 	InferCreationAttributes<OpportunityContact>
 > {
@@ -22,21 +22,16 @@ class OpportunityContact extends Model<
 	declare note: CreationOptional<string>;
 
 	//  Associations
-	declare opportunityId: CreationOptional<ForeignKey<string>>;
+	declare opportunityId: ForeignKey<string>;
 	declare contactId: ForeignKey<string>;
-	declare addUser: NonAttribute<User>;
-	declare delUser: NonAttribute<User>;
 
-	//  Time Stamp
-	declare addUserId: CreationOptional<ForeignKey<string>>;
-	declare delUserId: CreationOptional<ForeignKey<string>>;
-	declare addDate: CreationOptional<Date>;
-	declare delDate: CreationOptional<Date>;
+	declare opportunity?: NonAttribute<Opportunity>;
+	declare contact?: NonAttribute<Contact>;
 }
 
 OpportunityContact.init(
 	{
-		id: { type: DataTypes.STRING(25), defaultValue: () => id(), primaryKey: true },
+		id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
 		canDecide: { type: DataTypes.BOOLEAN, defaultValue: true, comment: 'Is the contact a decision maker?' },
 		toQuote: {
 			type: DataTypes.BOOLEAN,
@@ -45,9 +40,16 @@ OpportunityContact.init(
 		},
 		note: { type: DataTypes.TEXT },
 
-		//  Timestamp
+		// Audit fields
+		active: { type: DataTypes.BOOLEAN, defaultValue: true },
 		addDate: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, allowNull: false },
-		delDate: { type: DataTypes.DATE, allowNull: true }
+		addUserId: { type: DataTypes.UUID, allowNull: false },
+		delUserId: DataTypes.UUID,
+		delDate: DataTypes.DATE,
+
+		//  Associations
+		opportunityId: { type: DataTypes.UUID, allowNull: false },
+		contactId: { type: DataTypes.UUID, allowNull: false },
 	},
 	{
 		sequelize,
