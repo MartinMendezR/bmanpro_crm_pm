@@ -1,6 +1,5 @@
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect } from 'react';
 import { z } from 'zod';
 import _ from 'lodash';
 import TextField from '@mui/material/TextField';
@@ -34,24 +33,13 @@ const defaultValues = {
 };
 
 function AuthJsCredentialsSignInForm() {
-	const { control, formState, handleSubmit, setValue, setError } = useForm<FormType>({
+	const { control, formState, handleSubmit, setError } = useForm<FormType>({
 		mode: 'onChange',
 		defaultValues,
 		resolver: zodResolver(schema)
 	});
 
 	const { isValid, dirtyFields, errors } = formState;
-
-	useEffect(() => {
-		setValue('email', 'admin@fusetheme.com', {
-			shouldDirty: true,
-			shouldValidate: true
-		});
-		setValue('password', '5;4+0IOx:\\Dy', {
-			shouldDirty: true,
-			shouldValidate: true
-		});
-	}, [setValue]);
 
 	async function onSubmit(formData: FormType) {
 		const { email, password } = formData;
@@ -146,7 +134,7 @@ function AuthJsCredentialsSignInForm() {
 
 				<Link
 					className="text-md font-medium"
-					to="/#"
+					to="/forgot-password"
 				>
 					Forgot password?
 				</Link>

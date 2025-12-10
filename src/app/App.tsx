@@ -66,7 +66,7 @@ function App(props: AppProps) {
 																'bottom-0 right-0 mb-13 md:mb-17 mr-2 lg:mr-20 z-99'
 														}}
 													>
-															<QuickPanelProvider>{children}</QuickPanelProvider>
+														<QuickPanelProvider>{children}</QuickPanelProvider>
 													</SnackbarProvider>
 												</FuseDialogContextProvider>
 											</NavigationContextProvider>

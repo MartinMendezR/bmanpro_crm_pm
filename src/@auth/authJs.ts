@@ -1,5 +1,4 @@
 import NextAuth from 'next-auth';
-import { User } from '@auth/user';
 import { createStorage } from 'unstorage';
 import memoryDriver from 'unstorage/drivers/memory';
 import vercelKVDriver from 'unstorage/drivers/vercel-kv';
@@ -7,8 +6,6 @@ import { UnstorageAdapter } from '@auth/unstorage-adapter';
 import type { NextAuthConfig } from 'next-auth';
 import type { Provider } from 'next-auth/providers';
 import Credentials from 'next-auth/providers/credentials';
-import Facebook from 'next-auth/providers/facebook';
-import Google from 'next-auth/providers/google';
 import { authGetDbUserByEmail, authCreateDbUser } from './authApi';
 
 const storage = createStorage({
@@ -25,25 +22,10 @@ export const providers: Provider[] = [
 	Credentials({
 		authorize(formInput) {
 			/**
-			 * !! This is just for demonstration purposes
-			 * You can create your own validation logic here
-			 * !! Do not use this in production
-			 */
-
-			/**
 			 * Sign in
 			 */
 			if (formInput.formType === 'signin') {
-				if (formInput.password === '' || formInput.email !== 'admin@fusetheme.com') {
-					return null;
-				}
-			}
-
-			/**
-			 * Sign up
-			 */
-			if (formInput.formType === 'signup') {
-				if (formInput.password === '' || formInput.email === '') {
+				if (formInput.password === '' || formInput.email !== 'martin@bmanagerpro.com') {
 					return null;
 				}
 			}
@@ -55,9 +37,7 @@ export const providers: Provider[] = [
 				email: formInput?.email as string
 			};
 		}
-	}),
-	Google,
-	Facebook
+	})
 ];
 
 const config = {
@@ -99,7 +79,7 @@ const config = {
 					 */
 					const response = await authGetDbUserByEmail(session.user.email);
 
-					const userDbData = (await response.json()) as User;
+					const userDbData = await response.json();
 
 					session.db = userDbData;
 
@@ -110,13 +90,13 @@ const config = {
 					/** If user not found, create a new user */
 					if (errorStatus === 404) {
 						const newUserResponse = await authCreateDbUser({
-							email: session.user.email,
-							role: ['admin'],
-							displayName: session.user.name,
-							photoURL: session.user.image
+							email: session.user.email
+							// role: ['admin'],
+							// displayName: session.user.name,
+							// photoURL: session.user.image
 						});
 
-						const newUser = (await newUserResponse.json()) as User;
+						const newUser = await newUserResponse.json();
 
 						console.error('Error fetching user data:', error);
 

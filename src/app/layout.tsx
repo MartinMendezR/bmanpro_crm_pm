@@ -1,3 +1,5 @@
+console.log('LAYOUT RUNTIME:', typeof window === 'undefined' ? 'SERVER' : 'CLIENT');
+export const runtime = 'nodejs';
 import clsx from 'clsx';
 import 'src/styles/splash-screen.css';
 import 'src/styles/index.css';
@@ -5,7 +7,7 @@ import '../../public/assets/fonts/material-design-icons/MaterialIconsOutlined.cs
 import '../../public/assets/fonts/Geist/geist.css';
 import '../../public/assets/fonts/meteocons/style.css';
 import '../../public/assets/styles/prism.css';
-import { SessionProvider } from 'next-auth/react';
+import Providers from '@/components/Providers';
 import { auth } from '@auth/authJs';
 import generateMetadata from '../utils/generateMetadata';
 import App from './App';
@@ -58,12 +60,9 @@ export default async function RootLayout({
 				id="root"
 				className={clsx('loading')}
 			>
-				<SessionProvider
-					basePath="/auth"
-					session={session}
-				>
+				<Providers session={session}>
 					<App>{children}</App>
-				</SessionProvider>
+				</Providers>
 			</body>
 		</html>
 	);

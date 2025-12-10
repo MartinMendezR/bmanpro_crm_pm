@@ -1,5 +1,4 @@
-import { User } from '@auth/user';
-import UserModel from '@auth/user/models/UserModel';
+import type { User } from '@/models/user';
 import { PartialDeep } from 'type-fest';
 import api from '@/utils/api';
 
@@ -22,7 +21,7 @@ export async function authGetDbUserByEmail(email: string): Promise<Response> {
  */
 export function authUpdateDbUser(user: PartialDeep<User>) {
 	return api.put(`mock/auth/user/${user.id}`, {
-		body: JSON.stringify(UserModel(user))
+		body: JSON.stringify(user)
 	});
 }
 
@@ -31,6 +30,6 @@ export function authUpdateDbUser(user: PartialDeep<User>) {
  */
 export async function authCreateDbUser(user: PartialDeep<User>) {
 	return api.post('mock/users', {
-		body: JSON.stringify(UserModel(user))
+		body: JSON.stringify(user)
 	});
 }

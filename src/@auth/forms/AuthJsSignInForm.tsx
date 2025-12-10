@@ -1,21 +1,12 @@
 import { Alert } from '@mui/material';
 import { useSearchParams } from 'next/navigation';
-import AuthJsProviderSelect from './AuthJsProviderSelect';
 import AuthJsCredentialsSignInForm from './AuthJsCredentialsSignInForm';
-import AuthJsCredentialsSignUpForm from './AuthJsCredentialsSignUpForm';
 import signinErrors from './signinErrors';
 
-type AuthJsFormProps = { formType: 'signin' | 'signup' };
-
-function AuthJsForm(props: AuthJsFormProps) {
-	const { formType = 'signin' } = props;
-
+function AuthJsSignForm() {
 	const searchParams = useSearchParams();
-
 	const errorType = searchParams.get('error');
-
 	const error = errorType && (signinErrors[errorType] ?? signinErrors.default);
-
 	return (
 		<div className="flex flex-col space-y-8">
 			{error && (
@@ -30,11 +21,9 @@ function AuthJsForm(props: AuthJsFormProps) {
 					{error}
 				</Alert>
 			)}
-			{formType === 'signin' && <AuthJsCredentialsSignInForm />}
-			{formType === 'signup' && <AuthJsCredentialsSignUpForm />}
-			<AuthJsProviderSelect />
+			<AuthJsCredentialsSignInForm />
 		</div>
 	);
 }
 
-export default AuthJsForm;
+export default AuthJsSignForm;

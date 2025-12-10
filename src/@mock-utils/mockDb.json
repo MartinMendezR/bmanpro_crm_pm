@@ -2,11 +2,11 @@
   "users": [
     {
       "id": "0",
-      "password": "5;4+0IOx:\\Dy",
+      "password": "1111",
       "role": "admin",
-      "displayName": "Abbott Keitch",
+      "displayName": "Martin Mendez",
       "photoURL": "/assets/images/avatars/brian-hughes.jpg",
-      "email": "admin@fusetheme.com",
+      "email": "martin@bmanagerpro.com",
       "settings": {
         "layout": {},
         "theme": {}
@@ -19,11 +19,11 @@
     },
     {
       "id": "XgbuVEXBU5gtSKdbQRP1Zbbby1i1",
-      "password": "5;4+0IOx:\\Dy",
+      "password": "1111",
       "role": "admin",
-      "displayName": "Abbott Keitch",
+      "displayName": "Martin Mendez",
       "photoURL": "/assets/images/avatars/brian-hughes.jpg",
-      "email": "admin@fusetheme.com",
+      "email": "martin@bmanagerpro.com",
       "settings": {
         "layout": {},
         "theme": {}

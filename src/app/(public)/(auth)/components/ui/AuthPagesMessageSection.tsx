@@ -75,11 +75,15 @@ function AuthPagesMessageSection() {
 			<div className="relative z-10 w-full max-w-4xl">
 				<div className="text-7xl leading-none font-bold text-gray-100">
 					<div>Welcome to</div>
-					<div>our community</div>
+					<div>Business Manager Pro</div>
 				</div>
 				<div className="mt-6 text-lg leading-6 tracking-tight text-gray-400">
-					Fuse helps developers to build organized and well coded dashboards full of beautiful and rich
-					modules. Join us and start building your application today.
+					{`BusinessManagerPro helps businesses manage projects, tasks, and teams efficiently. 
+					Streamline your workflow and take control of your business operations today.`}
+				</div>
+				<div className="mt-6 text-lg leading-6 tracking-tight text-gray-400">
+					{`Enjoy secure access, real-time collaboration, and powerful analytics to drive growth. 
+					Experience seamless integration with your favorite tools and elevate your productivity.`}
 				</div>
 				<div className="mt-8 flex items-center">
 					<AvatarGroup
@@ -96,7 +100,7 @@ function AuthPagesMessageSection() {
 					</AvatarGroup>
 
 					<div className="ml-4 font-medium tracking-tight text-gray-400">
-						More than 17k people joined us, it's your turn
+						Join our thriving community and unlock your business potential!
 					</div>
 				</div>
 			</div>

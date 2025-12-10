@@ -101,7 +101,7 @@ export default tseslint.config({
             { "blankLine": "always", "prev": "if", "next": "*" },
             { "blankLine": "always", "prev": "*", "next": "function" }
         ],
-        "no-console": ["error", { "allow": ["error"] }],
+        // "no-console": ["error", { "allow": ["error"] }],
         "import/no-cycle": "off",
         "import/no-named-as-default": "off",
         "import/no-named-as-default-member": "off",
@@ -122,6 +122,11 @@ export default tseslint.config({
         "max-classes-per-file": "off",
         "react/jsx-filename-extension": "off",
         "import/extensions": "off",
+
+        "no-var": "off",
+        "vars-on-top": "off",
+        "@typescript-eslint/no-explicit-any": "off",
+        "no-unused-vars": "warn",
 
         // Unused imports
         "unused-imports/no-unused-imports": "error",

@@ -11,7 +11,6 @@ function Layout(props: { children: React.ReactNode }) {
 			rightSidePanel={false}
 			footer={false}
 		>
-			<p>(public)</p>
 			{children}
 		</MainLayout>
 	);
